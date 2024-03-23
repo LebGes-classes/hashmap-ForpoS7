@@ -11,7 +11,10 @@ public class HashMapTest {
         map = new HashMap<>();
         map.put("Сережа", 20);
         map.put("Игорь", 19);
-        map.put("Рашид", 30);
+        map.put("Bob", 30);
+        map.put("NYAAA", 1);
+        map.put("Rya", 2);
+        map.put("bra", 3);
     }
     @Test
     void put () {
@@ -34,10 +37,10 @@ public class HashMapTest {
     }
     @Test
     void get () {
-        Assertions.assertEquals(19, map.get("Игорь"));
+        Assertions.assertEquals(1, map.get("NYAAA"));
     }
     @Test
     void size () {
-        Assertions.assertEquals(3,map.size());
+        Assertions.assertEquals(6,map.size());
     }
 }

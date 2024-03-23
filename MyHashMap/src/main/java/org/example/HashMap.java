@@ -1,11 +1,15 @@
 package org.example;
 
-public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K,V>  {
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K,V> {
     private Node<K,V> [] table;
     private int size;
     public int size () {
         return size;
     }
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     public Node<K,V> [] getTable () {
         return table;
     }
@@ -14,28 +18,18 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
     }
     private void reCapacity (int newCapacity) {
         Node<K,V> [] newTable = new Node[newCapacity];
-        // Цикл по ячейкам
-        for (Node<K,V> bucket : table) {
-            // Цикл по Node в ячейках
-            while (bucket != null) {
-                int newBucketIndex = bucket.getHash() % newCapacity;
-                // Цикл по Node в расширенном HashMap
-                while (newTable[newBucketIndex] != null) {
-                    newTable[newBucketIndex] = newTable[newBucketIndex].getNext();
-                }
-                newTable[newBucketIndex] = bucket;
-                bucket = bucket.getNext();
-            }
-        }
+        System.arraycopy(table, 0, newTable, 0, table.length);
         table = newTable;
     }
     public void put (K key, V val) {
+        // Расширение мапа
+        if ((float) size / table.length >= DEFAULT_LOAD_FACTOR){
+            reCapacity(table.length * 2);
+        }
         // Высчитывается hash по ключу
         int hash = key.hashCode();
         // Используется хэш-код для определения индекса bucket
         int bucketIndex = hash % table.length;
-        // Счетчик по Node
-        int count = 0;
         // Обработка потенциальной коллизии
         Node<K, V> curNode = table[bucketIndex];
         while (curNode != null) {
@@ -46,7 +40,6 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
                     return;
                 }
             }
-            count++;
             // Движение по bucket
             curNode = curNode.getNext();
         }
@@ -54,13 +47,8 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
         Node<K,V> newNode = new Node<>(hash, key, val);
         newNode.setNext(table[bucketIndex]);
         table[bucketIndex] = newNode;
+        table[bucketIndex].setPrev(newNode);
         size++;
-
-
-        // Расширение массива при увеличении одного из bucket до table.length
-        if (count >= table.length) {
-            reCapacity(table.length * 2);
-        }
 
     }
     public boolean containsKey (K key) {
@@ -71,8 +59,10 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
         // Поиск ключа
         Node<K,V> curNode = table[bucketIndex];
         while (curNode != null) {
-            if (curNode.getKey().equals(key)) {
-                return true;
+            if (curNode.getHash() == hash) {
+                if (curNode.getKey().equals(key)) {
+                    return true;
+                }
             }
             curNode = curNode.getNext();
         }
@@ -108,11 +98,16 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
             return res;
         }
         while (curNode.getNext() != null) {
-            if (curNode.getNext().getKey().equals(key)) {
-                res = curNode.getNext().getVal();
-                curNode.setNext(curNode.getNext().getNext());
-                size--;
-                return res;
+            if (curNode.getNext().getHash() == hash) {
+                if (curNode.getNext().getKey().equals(key)) {
+                    res = curNode.getNext().getVal();
+                    curNode.setNext(curNode.getNext().getNext());
+                    if (curNode.getNext() != null) {
+                        curNode.getNext().setPrev(curNode);
+                    }
+                    size--;
+                    return res;
+                }
             }
             curNode = curNode.getNext();
         }
@@ -126,8 +121,10 @@ public class HashMap<K extends Comparable<K>,V>  implements HashMapRealization<K
         // Поиск ключа
         Node<K,V> curNode = table[bucketIndex];
         while (curNode != null) {
-            if (curNode.getKey().equals(key)) {
-                return curNode.getVal();
+            if (curNode.getHash() == hash) {
+                if (curNode.getKey().equals(key)) {
+                    return curNode.getVal();
+                }
             }
             curNode = curNode.getNext();
         }
